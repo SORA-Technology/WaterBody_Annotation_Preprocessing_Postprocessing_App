@@ -1,20 +1,25 @@
-
 import rasterio.vrt
 import rasterio.sample
-
-
 import streamlit as st
 from process import process_tiff_and_geojson as  run_preprocessing
 from post_process import run_postprocessing
 from logger import Logger
+import json
+from visualize_coco import load_coco_annotations, draw_coco_bboxes
+from visualize_jsonmin import load_jsonmin_annotations, draw_jsonmin_bboxes
 
 logger = Logger("APP_LOGGER")
 
+@st.cache_data
+def parse_coco_json(json_bytes):
+    """
+    Loads JSON from raw bytes. We'll do this once per unique file.
+    """
+    return json.loads(json_bytes)
 
 
 def main():
 
-    st.title("***Sora-Tech:*** WaterBody Annotation Preprocessing & Postprocessing App")
     st.markdown(
         """
         <style>
@@ -33,13 +38,37 @@ def main():
         unsafe_allow_html=True
     )
 
-    mode = st.sidebar.radio("***Select Mode:***", ["Pre-Processing", "Post-Processing"])
+    mode = st.sidebar.radio(
+        "***Select Mode:***", 
+        ["Home", "Pre-Processing", "Post-Processing", "Visualization"]
+        )
+
+    if mode == "Home":
+        st.title("***Sora-Tech:*** WaterBody Annotation Preprocessing, Postprocessing & Visualization App")
+        st.subheader("Welcome to the Sora-Tech WaterBody App!")
+        st.write("""
+            **Here's how to get started:**
+
+            - **Pre-Processing**: 
+              Split a large TIFF image around points from a GeoJSON file. 
+              This will produce smaller image patches and annotated PNGs.
+            
+            - **Post-Processing**: 
+              Convert your labeled JSON-MIN data into COCO format. 
+              This is helpful if you want standard annotation structures for training or analysis.
+            
+            - **Visualization**: 
+              Visualize your annotations or processed images right in the app.
+            
+            Use the **sidebar** on the left to pick the mode you want!
+        """)
+
 
     # ---------------------
     # 1) PREPROCESSING MODE
     # ---------------------
     if mode == "Pre-Processing":
-        st.subheader("Preprocessing: Split Image Around Points from GeoJSON")
+        st.title("***Pre-Processing:*** Split Image Around Points from GeoJSON")
         
         geojson_file = st.file_uploader("***Upload GeoJSON File***", type=["geojson", "json"])
         tiff_file    = st.file_uploader("***Upload TIFF File***", type=["tif", "tiff"])
@@ -78,8 +107,8 @@ def main():
     # ----------------------
     # 2) POSTPROCESSING MODE
     # ----------------------
-    else:
-        st.subheader("Postprocessing: Convert JSON-MIN labeled data to COCO Format")
+    elif mode == "Post-Processing":
+        st.title("***Post-Processing:*** Convert JSON-MIN labeled data to COCO Format")
 
         post_json_file = st.file_uploader("***Upload JSON-MIN File***", type=["json"])
         
@@ -87,7 +116,7 @@ def main():
         post_date     = st.text_input("***Enter Date (e.g. 20240728)***")
 
         # Only ONE folder input for the PNG images
-        image_folder_path = st.text_input("***Folder Path to original PNG Images***")
+        images_folder_path = st.text_input("***Folder Path to original PNG Images***")
 
         if st.button("Run Postprocessing"):
             if not post_json_file:
@@ -99,7 +128,7 @@ def main():
             if not post_date.strip():
                 st.error("Please input the date (e.g. 20240728).")
                 return
-            if not image_folder_path.strip():
+            if not images_folder_path.strip():
                 st.error("Please specify the path to your PNG images folder.")
                 return
 
@@ -109,12 +138,106 @@ def main():
                         input_json_bytes=post_json_file.getvalue(),
                         region_name=region_name.strip(),
                         post_date=post_date.strip(),
-                        image_folder_path=image_folder_path.strip()
+                        images_folder_path=images_folder_path.strip()
                     )
                     st.balloons()
                 except Exception as e:
                     st.error(f"Error in postprocessing: {e}")
                     logger.error(f"Postprocessing error: {e}")
+        
+    elif mode == "Visualization":
+        st.title("Visualization")
+
+        st.write("#### Use the options below to view your annotated images one by one with Next/Previous.")
+
+        viz_mode = st.radio("***Choose Annotation Format:***", ["JSON-MIN", "COCO"], key="viz_mode")
+        images_folder_path = st.text_input("***Folder Path to images***")
+
+        if viz_mode == "COCO":
+            coco_json = st.file_uploader("Upload COCO JSON", type=["json"])
+            if coco_json and images_folder_path.strip():
+                # Load the JSON
+                coco_data = parse_coco_json(coco_json.read())
+                # Convert to list
+                images_list = load_coco_annotations(coco_data, images_folder_path)
+                if not images_list:
+                    st.error("No images found in COCO data.")
+                    return
+
+                
+
+                if "coco_idx" not in st.session_state:
+                    st.session_state["coco_idx"] = 0
+                idx = st.session_state["coco_idx"]
+                # Show the current image
+                current_item = images_list[idx]
+                fig = draw_coco_bboxes(
+                    current_item["image_path"],
+                    current_item["bboxes"],
+                    current_item["labels"],
+                    current_item["attributes"]
+                )
+                if fig is None:
+                    st.warning(f"Could not open image: {current_item['image_path']}")
+                else:
+                    # st.plotly_chart(fig, use_container_width=True)
+                    st.pyplot(fig)
+                st.write(f"Image {idx+1}/{len(images_list)}: {current_item['filename']}")
+
+
+                
+                col1, col3, col2 = st.columns([1, 3, 1])
+                with col1:
+                    if st.button("Previous"):
+                        st.session_state["coco_idx"] = (idx - 1) % len(images_list)
+                        st.experimental_rerun()
+                with col2:
+                    if st.button("Next"):
+                        st.session_state["coco_idx"] = (idx + 1) % len(images_list)
+                        st.experimental_rerun()
+
+
+        else:
+            # JSON-MIN
+            jsonmin_file = st.file_uploader("Upload JSON-MIN file", type=["json"])
+            if jsonmin_file and images_folder_path.strip():
+                jsonmin_data = json.loads(jsonmin_file.read())
+                images_list = load_jsonmin_annotations(jsonmin_data, images_folder_path)
+                if not images_list:
+                    st.error("No images found in JSON-MIN data.")
+                    return
+
+                
+                if "jsonmin_idx" not in st.session_state:
+                    st.session_state["jsonmin_idx"] = 0
+
+                idx = st.session_state["jsonmin_idx"]
+                current_item = images_list[idx]
+                fig = draw_jsonmin_bboxes(
+                    current_item["image_path"],
+                    current_item["bboxes"],
+                    current_item["labels"],
+                    current_item["attributes"]
+                )
+                if fig is None:
+                    st.warning(f"Could not open image: {current_item['image_path']}")
+                else:
+                    st.pyplot(fig)
+                st.write(f"Image {idx+1}/{len(images_list)}: {current_item['filename']}")
+
+
+                
+                col1, col3, col2 = st.columns([1, 3, 1])
+                with col1:
+                    if st.button("Previous"):
+                        st.session_state["jsonmin_idx"] = (idx - 1) % len(images_list)
+                        st.experimental_rerun()
+                with col2:
+                    if st.button("Next"):
+                        st.session_state["jsonmin_idx"] = (idx + 1) % len(images_list)
+                        st.experimental_rerun()
+
+
 
 if __name__ == "__main__":
     main()
