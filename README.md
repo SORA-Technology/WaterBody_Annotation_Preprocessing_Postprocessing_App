@@ -11,8 +11,6 @@ The app is built with **Streamlit** and includes the following Python modules:
 - **shapely** and **pyproj** for coordinate transformations  
 - **OpenCV** and **PIL** for image manipulation  
 - **matplotlib**/**plotly** for visualization  
-- **tqdm** for progress bars  
-- **colorama** for colorized logging  
 
 > **Table of Contents**  
 > - [Features](#features)  
