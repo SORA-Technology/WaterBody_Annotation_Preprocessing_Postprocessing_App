@@ -11,8 +11,6 @@ The app is built with **Streamlit** and includes the following Python modules:
 - **shapely** and **pyproj** for coordinate transformations  
 - **OpenCV** and **PIL** for image manipulation  
 - **matplotlib**/**plotly** for visualization  
-- **tqdm** for progress bars  
-- **colorama** for colorized logging  
 
 > **Table of Contents**  
 > - [Features](#features)  
@@ -40,8 +38,8 @@ The app is built with **Streamlit** and includes the following Python modules:
 ### Important: Clone This Repository
 Before building the Docker image, clone or download this repo to have all source files locally:
 ```bash
-git clone https://github.com/YourOrgName/waterbodyapp.git
-cd waterbodyapp 
+git clone https://github.com/SORA-Technology/WaterBody_Annotation_Preprocessing_Postprocessing_App.git
+cd WaterBody_Annotation_Preprocessing_Postprocessing_App
 ```
 
 ## Quick Start with Docker
