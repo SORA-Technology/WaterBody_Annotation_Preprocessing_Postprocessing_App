@@ -41,7 +41,7 @@ The app is built with **Streamlit** and includes the following Python modules:
 Before building the Docker image, clone or download this repo to have all source files locally:
 ```bash
 git clone https://github.com/SORA-Technology/WaterBody_Annotation_Preprocessing_Postprocessing_App.git
-cd waterbodyapp 
+cd WaterBody_Annotation_Preprocessing_Postprocessing_App
 ```
 
 ## Quick Start with Docker
