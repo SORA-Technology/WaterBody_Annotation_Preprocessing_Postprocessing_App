@@ -66,3 +66,17 @@ That’s it! You can now access the app in your browser at:
 http://localhost:8501
 ```
 
+### Repository Structure
+
+```
+.
+├── app.py                # Main Streamlit app
+├── process.py            # Preprocessing logic
+├── post_process.py       # Postprocessing logic
+├── visualize_coco.py     # Visualize COCO annotations
+├── visualize_jsonmin.py  # Visualize JSON-MIN annotations
+├── logger.py             # Custom color logger
+├── Dockerfile            # Docker setup
+├── README.md             
+```
+
