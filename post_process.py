@@ -13,6 +13,21 @@ from logger import Logger
 logger = Logger("POST_PROCESSOR")
 
 
+def convert_path_for_docker(win_path: str) -> str:
+    """
+    Convert a Windows path like 'C:\\Users\\...' to a Docker path like '/host/Users/...'
+    Assumes you've mounted your entire C: drive to /host in Docker:
+        docker run --privileged -v "C:\\:/host" ...
+    """
+    if win_path.startswith("C:") or win_path.startswith("C:\\"):
+        # remove the 'C:' prefix
+        win_path = win_path[2:]
+    # replace backslashes with forward slashes
+    win_path = win_path.replace("\\", "/")
+    # prepend '/host'
+    docker_path = f"/host{win_path}"
+    return docker_path
+
 def create_dir(path: str) -> None:
     """Safely create a directory if it doesn't exist."""
     try:
@@ -54,6 +69,7 @@ def getdataFromImage(file_name, image_folder_path, cropped_folder_path, threshol
     saves the cropped image to another folder,
     returns (height, width, offset_y, offset_x).
     """
+    # image_folder_path = convert_path_for_docker(image_folder_path)
     try:
         image_path = os.path.join(image_folder_path, file_name)
         img = Image.open(image_path)
@@ -290,30 +306,31 @@ def run_postprocessing(
     input_json_bytes: bytes,
     region_name: str,
     post_date: str,
-    image_folder_path: str
+    images_folder_path: str
 ):
     """
     Single input for `image_folder_path`. 
     We automatically create "final_png" as the cropped_folder_path next to it.
     Then we build the final filename => {region_name}_{post_date}.json
     """
+    images_folder_path = convert_path_for_docker(images_folder_path)
     temp_input_json = "temp_post_input.json"
     with open(temp_input_json, 'wb') as f:
         f.write(input_json_bytes)
 
     # Build final_png path next to your image_folder_path
-    cropped_folder_path = os.path.join(os.path.dirname(image_folder_path), "final_png")
+    cropped_folder_path = os.path.join(f"/app/output/post_processing/{region_name}", "final_png")
     create_dir(cropped_folder_path)
 
     # Build the final output filename
     output_filename = f"{region_name}_{post_date}.json"
-    output_path = os.path.join(os.getcwd(), output_filename)
+    output_path = os.path.join(f"/app/output/post_processing/{region_name}", output_filename)
 
     # Convert data => COCO (with progress bar)
     convert_to_coco(
         input_path=temp_input_json,
         output_path=output_path,
-        image_folder_path=image_folder_path,
+        image_folder_path=images_folder_path,
         cropped_folder_path=cropped_folder_path,
     )
 

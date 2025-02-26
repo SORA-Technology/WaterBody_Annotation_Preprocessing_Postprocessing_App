@@ -53,9 +53,9 @@ docker build -t waterbodyapp .
 ```
 
 ### 2) Run the container
-Once the image is built, start the container and map Streamlit’s default port 8501:
+Once the image is built, start the container and map Streamlit’s default port 8501, dont forget to replace `output_folder` with your own output folder. 
 ```bash 
-docker run -p 8501:8501 --name waterbodyapp -v "C:\:/host" --privileged waterbodyapp
+docker run -p 8501:8501 --name waterbodyapp --privileged -v "output_folder":/app/output -v "C:\:/host" waterbodyapp
 ```
 
 That’s it! You can now access the app in your browser at:

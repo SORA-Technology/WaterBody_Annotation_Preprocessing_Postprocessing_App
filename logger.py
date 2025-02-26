@@ -35,7 +35,7 @@ class CustomFormatter(logging.Formatter):
         return f"{log_color}{log_message}{Style.RESET_ALL}"
 
 
-def Logger(name: str = "ColoredLogger", log_file: str = "file.log") -> logging.Logger:
+def Logger(name: str = "ColoredLogger", log_file: str = "/app/output/file.log") -> logging.Logger:
     """Get a configured logger with color support and file logging."""
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)  # Adjust the log level as needed

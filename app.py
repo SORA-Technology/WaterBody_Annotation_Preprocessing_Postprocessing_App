@@ -74,7 +74,7 @@ def main():
         tiff_file    = st.file_uploader("***Upload TIFF File***", type=["tif", "tiff"])
         
         region_name   = st.text_input("***Enter Region name***")
-        output_folder = st.text_input("***Output folder path (This can be changed.)***", value="output")
+        output_folder = st.text_input("***Output folder path (This can be changed.)***", value="output/pre_process")
 
         if st.button("Run Preprocessing"):
             if not geojson_file:
