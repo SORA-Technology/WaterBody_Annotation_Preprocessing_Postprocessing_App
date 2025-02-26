@@ -164,8 +164,7 @@ def main():
                     st.error("No images found in COCO data.")
                     return
 
-                
-
+            
                 if "coco_idx" not in st.session_state:
                     st.session_state["coco_idx"] = 0
                 idx = st.session_state["coco_idx"]
@@ -190,11 +189,11 @@ def main():
                 with col1:
                     if st.button("Previous"):
                         st.session_state["coco_idx"] = (idx - 1) % len(images_list)
-                        st.experimental_rerun()
+                        st.rerun()
                 with col2:
                     if st.button("Next"):
                         st.session_state["coco_idx"] = (idx + 1) % len(images_list)
-                        st.experimental_rerun()
+                        st.rerun()
 
 
         else:
@@ -231,11 +230,11 @@ def main():
                 with col1:
                     if st.button("Previous"):
                         st.session_state["jsonmin_idx"] = (idx - 1) % len(images_list)
-                        st.experimental_rerun()
+                        st.rerun()
                 with col2:
                     if st.button("Next"):
                         st.session_state["jsonmin_idx"] = (idx + 1) % len(images_list)
-                        st.experimental_rerun()
+                        st.rerun()
 
 
 

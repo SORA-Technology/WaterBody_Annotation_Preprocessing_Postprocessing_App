@@ -22,7 +22,22 @@ label_colors = {
     "River (stagnant)": (128, 128, 128)    # Gray
 }
 
-@st.cache_data
+def convert_path_for_docker(win_path: str) -> str:
+    """
+    Convert a Windows path like 'C:\\Users\\...' to a Docker path like '/host/Users/...'
+    Assumes you've mounted your entire C: drive to /host in Docker:
+        docker run --privileged -v "C:\\:/host" ...
+    """
+    if win_path.startswith("C:") or win_path.startswith("C:\\"):
+        # remove the 'C:' prefix
+        win_path = win_path[2:]
+    # replace backslashes with forward slashes
+    win_path = win_path.replace("\\", "/")
+    # prepend '/host'
+    docker_path = f"/host{win_path}"
+    return docker_path
+
+
 def load_coco_annotations(coco_dict, image_dir):
     """
     Converts a loaded COCO JSON dict into a list of image entries 
@@ -38,6 +53,8 @@ def load_coco_annotations(coco_dict, image_dir):
           'filename': str
         }
     """
+
+    image_dir = convert_path_for_docker(image_dir)
 
     categories = {cat['id']: cat['name'] for cat in coco_dict['categories']}
     images_list = []

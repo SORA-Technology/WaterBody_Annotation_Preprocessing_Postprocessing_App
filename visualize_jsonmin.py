@@ -18,6 +18,21 @@ label_colors = {
     "River (stagnant)": (128, 128, 128)
 }
 
+def convert_path_for_docker(win_path: str) -> str:
+    """
+    Convert a Windows path like 'C:\\Users\\...' to a Docker path like '/host/Users/...'
+    Assumes you've mounted your entire C: drive to /host in Docker:
+        docker run --privileged -v "C:\\:/host" ...
+    """
+    if win_path.startswith("C:") or win_path.startswith("C:\\"):
+        # remove the 'C:' prefix
+        win_path = win_path[2:]
+    # replace backslashes with forward slashes
+    win_path = win_path.replace("\\", "/")
+    # prepend '/host'
+    docker_path = f"/host{win_path}"
+    return docker_path
+
 def load_jsonmin_annotations(jsonmin_data, image_dir):
     """
     Returns a list of dict:
@@ -29,6 +44,8 @@ def load_jsonmin_annotations(jsonmin_data, image_dir):
         'attributes': list of str
       }
     """
+    image_dir = convert_path_for_docker(image_dir)
+    
     images_list = []
     for annotation in jsonmin_data:
         # The file name logic might differ. Adjust as needed
