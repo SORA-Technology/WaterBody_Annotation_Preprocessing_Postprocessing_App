@@ -42,7 +42,7 @@ git clone https://github.com/SORA-Technology/WaterBody_Annotation_Preprocessing_
 cd WaterBody_Annotation_Preprocessing_Postprocessing_App
 ```
 
-## Quick Start with Docker
+## Quick Start with Docker locally 
 
 You can run everything inside a Docker container to avoid installing Python dependencies on your local machine.
 
